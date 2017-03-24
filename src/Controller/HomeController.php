@@ -41,11 +41,11 @@ class HomeController
     {
         $startTime = microtime(true);
         if (false === $request->getAttribute('csrfStatus')) {
-            die('Erreur de Csrf');
+	        return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur de jeton Csrf.']);
         } else {
         	// Vérification des répertoires
 	        if (!is_dir($this->config['tmpPath']) && !mkdir($this->config['tmpPath'], 0777)) {
-		        die('Echec lors de la création du répertoire temporaire...');
+		        return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Echec lors de la création du répertoire temporaire.']);
 	        }
             // Get post data
             $postVars = $request->getParsedBody();
@@ -59,7 +59,7 @@ class HomeController
             // 2. On cherche le fichier js qui contiendra la clef
             preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
             if (count($matches) !== 1) {
-                die ('Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).');
+	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).']);
             }
             // 3. On charge le fichier js
             $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
@@ -68,12 +68,12 @@ class HomeController
             $pattern = 'https://wxs.ign.fr/' ;
             $pos = strpos($js, $pattern);
             if ($pos === false) {
-                die ('Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).');
+	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).']);
             }
             $pos += strlen($pattern);
             $end = strpos($js, '/', $pos);
             if ($end === false) {
-                die ('Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).');
+	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).']);
             }
            
             $this->apiKey = substr($js, $pos, $end - $pos);
@@ -176,7 +176,7 @@ class HomeController
 
                 $img = imagecreatefromjpeg($this->config['tmpPath'].$imageName);
                 if(!$img){
-                    echo 'Failed' ; die;
+	                return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la lecture d\'une image téléchargée.']);
                 }
                 imagecopy($bigImage, $img, 256 * $j, 256 * $i, 0, 0, 256, 256);
                 imagedestroy($img);
@@ -189,6 +189,5 @@ class HomeController
         // Afficher la page final
         return $this->renderer->render($response, 'merge.phtml');
     }
-    
 
 }
