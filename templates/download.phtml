@@ -1,0 +1,33 @@
+<?php include 'partials/header.phtml';
+$passed = round($downloadTime * 100) /100;
+$total = round($passed * $nbTotal / $nbDone *100) / 100;
+
+function timeToString($time) {
+    if ($time < 60) {
+        $totalTime = "$time secondes";
+    } else {
+        $min = round($time /60) ;
+        $totalTime = "$min minute" ;
+        if ($min > 1) {
+            $totalTime.= 's';
+        }
+        $sec = $time % 60 ;
+        if ($sec > 0){
+            $totalTime.= " $sec seconde";
+            if ($sec > 1) {
+                $totalTime.= 's';
+            }
+        }
+    }
+    return $totalTime;
+}
+
+?>
+<div class="container">
+    <h1>Téléchargement</h1>
+    <p>Les images de votre vue aérienne sont en cours de téléchargement. Cette page se rechargera dans <?= $seconds ?> secondes...</p>
+    <p><?= $nbDone ?> images sur un total de <?= $nbTotal ?> ont été téléchargées.</p>
+    <p>Temps passé : <?= timeToString($passed) ?> (hors temps de pause entre chaque lots).</p>
+    <p>Temps total estimé : <?= timeToString($total) ?> (hors temps de pause entre chaque lots).</p>
+</div>
+<?php include 'partials/footer.phtml'; ?>

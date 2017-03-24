@@ -1,0 +1,9 @@
+<?php include 'partials/header.phtml'; ?>
+<div class="container">
+    <h1>Configuration</h1>
+    <p>Nous avons récupéré une clef d'API Geoportail afin de générer et télécharger les images. La clef est <em><?= $apiKey ?></em>.</p>
+    <p>Cette page va se recharger dans quelques secondes. Afin de solliciter respectueusement le serveur Geoportail, les images seront
+        téléchargées par lots successifs de taille variable, avec des temps de pause entre chaque lot. Tout le processus est automatisé,
+        et vous pourrez télécharger votre image finale après la fin des téléchargements.</p>
+</div>
+<?php include 'partials/footer.phtml'; ?>

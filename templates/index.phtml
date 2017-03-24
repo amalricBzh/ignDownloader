@@ -1,0 +1,34 @@
+<?php include 'partials/header.phtml'; ?>
+<div class="container">
+    <h1>Configuration</h1>
+    <form method="post" class="form-horizontal">
+        <input type="hidden" name="<?= $csrfNameKey ?>" value="<?= $csrfName ?>">
+        <input type="hidden" name="<?= $csrfValueKey ?>" value="<?= $csrfValue ?>">
+      <div class="form-group">
+        <label for="row" class="col-sm-3 control-label">Ligne (ex 183200)</label>
+        <div class="col-sm-3">
+            <input type="number" name="row" class="form-control" id="row" placeholder="Numéro de la ligne" required title="Nombre uniquement" value="183200">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="col" class="col-sm-3 control-label">Colonne (ex 259763)</label>
+        <div class="col-sm-3">
+            <input type="number" name="col" class="form-control" id="col" placeholder="Numéro de la colonne" required title="Nombre uniquement" value="259763">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="nbrows" class="col-sm-3 control-label">Nb lignes (de 3 à 21)</label>
+        <div class="col-sm-3">
+            <input type="number" name="nbrows" class="form-control" id="nbrows" placeholder="Nombre de lignes" required title="Nombre uniquement" min="3" max="21" step="2" value="15">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="nbcols" class="col-sm-3 control-label">Nb colonnes (de 3 à 21)</label>
+        <div class="col-sm-3">
+            <input type="number" name="nbcols" class="form-control" id="nbcols" placeholder="Nombre de colonnes" required title="Nombre uniquement" min="3" max="21" step="2" value="15">
+        </div>
+      </div>
+      <button type="submit" class="btn btn-default">Générer</button>
+    </form>
+</div>
+<?php include 'partials/footer.phtml'; ?>
