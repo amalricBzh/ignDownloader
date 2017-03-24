@@ -41,75 +41,74 @@ class HomeController
     {
         $startTime = microtime(true);
         if (false === $request->getAttribute('csrfStatus')) {
-	        return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur de jeton Csrf.']);
-        } else {
-        	// Vérification des répertoires
-	        if (!is_dir($this->config['tmpPath']) && !mkdir($this->config['tmpPath'], 0777)) {
-		        return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Echec lors de la création du répertoire temporaire.']);
-	        }
-            // Get post data
-            $postVars = $request->getParsedBody();
-            $row = (int) $postVars['row'];
-            $col = (int) $postVars['col'];
-            $nbRow = (int) $postVars['nbrows'];
-            $nbCol = (int) $postVars['nbcols'];
-            // Try to get personnal key from geoportail
-            // 1. On charge une page avec la carte
-            $html = file_get_contents('https://www.geoportail.gouv.fr/carte');
-            // 2. On cherche le fichier js qui contiendra la clef
-            preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
-            if (count($matches) !== 1) {
-	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).']);
-            }
-            // 3. On charge le fichier js
-            $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
-            $js = file_get_contents($jsFilename);
-            // 4. On y cherche la clef
-            $pattern = 'https://wxs.ign.fr/' ;
-            $pos = strpos($js, $pattern);
-            if ($pos === false) {
-	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).']);
-            }
-            $pos += strlen($pattern);
-            $end = strpos($js, '/', $pos);
-            if ($end === false) {
-	            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).']);
-            }
-           
-            $this->apiKey = substr($js, $pos, $end - $pos);
-	        $this->logger->addInfo("APIKey trouvée : ". $this->apiKey);
-            
-            // Create images urls
-            $images = [] ;
-            for ($i = 0; $i < $nbRow ; $i++ ) {
-                for ($j = 0 ; $j < $nbCol ; $j++) {
-                    $images[] = [
-                        'row' => $i,
-                        'col' => $j,
-                        'url' => 'http://wxs.ign.fr/'.$this->apiKey.'/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX=19&TILEROW='
-                        . ($row + $i) . '&TILECOL=' . ($col + $j) . '&FORMAT=image%2Fjpeg'
-                    ];
-                }
-            }
-            $config = [
-                'todo' => $images,
-                'done' => [],
-                'rows' => $nbRow,
-                'cols' => $nbCol,
-                'times' => [
-                    'config' => microtime(true) - $startTime,
-                    'download' => 0
-                ]
-            ];
-            // Write config file
-            file_put_contents($this->config['configFile'], json_encode($config, JSON_PRETTY_PRINT));
-
-            // Redirect to Download page after some seconds
-            $seconds = rand(5,15);
-            $response = $response->withHeader('Refresh', $seconds. ';URL=/download');
-                        
-            return $this->renderer->render($response, 'configuration.phtml', ['apiKey' => $this->apiKey]);
+	        return $this->renderer->render( $response, 'error.phtml', [ 'errorMessage' => 'Erreur de jeton Csrf.' ] );
         }
+        // Vérification des répertoires
+        if (!is_dir($this->config['tmpPath']) && !mkdir($this->config['tmpPath'], 0777)) {
+	        return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Echec lors de la création du répertoire temporaire.']);
+        }
+        // Get post data
+        $postVars = $request->getParsedBody();
+        $row = (int) $postVars['row'];
+        $col = (int) $postVars['col'];
+        $nbRow = (int) $postVars['nbrows'];
+        $nbCol = (int) $postVars['nbcols'];
+        // Try to get personnal key from geoportail
+        // 1. On charge une page avec la carte
+        $html = file_get_contents('https://www.geoportail.gouv.fr/carte');
+        // 2. On cherche le fichier js qui contiendra la clef
+        preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
+        if (count($matches) !== 1) {
+            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).']);
+        }
+        // 3. On charge le fichier js
+        $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
+        $jsContent = file_get_contents($jsFilename);
+        // 4. On y cherche la clef
+        $pattern = 'https://wxs.ign.fr/' ;
+        $pos = strpos($jsContent, $pattern);
+        if ($pos === false) {
+            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).']);
+        }
+        $pos += strlen($pattern);
+        $end = strpos($jsContent, '/', $pos);
+        if ($end === false) {
+            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).']);
+        }
+
+        $this->apiKey = substr($jsContent, $pos, $end - $pos);
+        $this->logger->addInfo("APIKey trouvée : ". $this->apiKey);
+
+        // Create images urls
+        $images = [] ;
+        for ($i = 0; $i < $nbRow ; $i++ ) {
+            for ($j = 0 ; $j < $nbCol ; $j++) {
+                $images[] = [
+                    'row' => $i,
+                    'col' => $j,
+                    'url' => 'http://wxs.ign.fr/'.$this->apiKey.'/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX=19&TILEROW='
+                    . ($row + $i) . '&TILECOL=' . ($col + $j) . '&FORMAT=image%2Fjpeg'
+                ];
+            }
+        }
+        $config = [
+            'todo' => $images,
+            'done' => [],
+            'rows' => $nbRow,
+            'cols' => $nbCol,
+            'times' => [
+                'config' => microtime(true) - $startTime,
+                'download' => 0
+            ]
+        ];
+        // Write config file
+        file_put_contents($this->config['configFile'], json_encode($config, JSON_PRETTY_PRINT));
+
+        // Redirect to Download page after some seconds
+        $seconds = rand(5,15);
+        $response = $response->withHeader('Refresh', $seconds. ';URL=/download');
+
+        return $this->renderer->render($response, 'configuration.phtml', ['apiKey' => $this->apiKey]);
     }
     
     public function download(Request $request, Response $response, $args)
