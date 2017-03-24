@@ -6,7 +6,7 @@ session_start();
 
 // Autoloader
 spl_autoload_register(function ($classname) {
-    require ("../src/" . $classname . ".php");
+	require ("../src/" . $classname . ".php");
 });
 
 // Create the application
