@@ -1,0 +1,5 @@
+data/logs/*
+data/temp/*
+data/config.json
+vendor
+.idea
