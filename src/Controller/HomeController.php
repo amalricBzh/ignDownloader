@@ -11,9 +11,11 @@ class HomeController
     protected $renderer ;
     protected $csrf ;
     protected $config ;
-    
+
     protected $apiKey = 'an7nvfzojv5wa96dsga5nk8w';
-    
+    // pour faire croire au serveur qu'on est un vrai navigateur, sinon il nous jette.
+    protected $navigatorName = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:61.0) Gecko/20100101 Firefox/61.0";
+
     public function __construct($logger, $renderer, $csrf, $config)
     {
         $this->logger = $logger;
@@ -21,10 +23,34 @@ class HomeController
         /** @var \Slim\Csrf\Guard csrf */
         $this->csrf = $csrf;
         $this->config = $config;
+
+        if ($this->config['useProxy']) {
+            stream_context_set_default(array(
+                'http' => array(
+                    'proxy' => $this->config['proxyUrl'],
+                    'request_fulluri' => true,
+                    'header' => array(
+                        'Proxy-Authorization: Basic '.base64_encode($this->config['proxyPass']),
+                        'User-agent: ' . $this->navigatorName
+                    ),
+                ),
+                // Seems useless....
+                'https' => array(
+                    'proxy' => $this->config['proxyUrl'],
+                    'request_fulluri' => true,
+                    'header' => array(
+                        'Proxy-Authorization: Basic '.base64_encode($this->config['proxyPass']),
+                        'User-agent: ' . $this->navigatorName
+                    ),
+                )
+            ));
+        }
     }
-    
+
     public function index(Request $request, Response $response, $args)
     {
+        if ($request); // Avoid Codacy warning
+
         // CSRF
         $nameKey = $this->csrf->getTokenNameKey();
         $valueKey = $this->csrf->getTokenValueKey();
@@ -39,6 +65,8 @@ class HomeController
     
     public function post(Request $request, Response $response, $args)
     {
+        if ($args); // Avoid Codacy warning
+
         $startTime = microtime(true);
         if (false === $request->getAttribute('csrfStatus')) {
 	        return $this->renderer->render( $response, 'error.phtml', [ 'errorMessage' => 'Erreur de jeton Csrf.' ] );
@@ -55,15 +83,20 @@ class HomeController
         $nbCol = (int) $postVars['nbcols'];
         // Try to get personnal key from geoportail
         // 1. On charge une page avec la carte
-        $html = file_get_contents('https://www.geoportail.gouv.fr/carte');
+        $html = @file_get_contents('https://www.geoportail.gouv.fr/carte');
+        if ($html === false ) {
+            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Impossible de joindre le serveur. Vous êtes peut-être derrière un proxy.']);
+        }
         // 2. On cherche le fichier js qui contiendra la clef
         preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
         if (count($matches) !== 1) {
             return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).']);
         }
+
         // 3. On charge le fichier js
         $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
         $jsContent = file_get_contents($jsFilename);
+
         // 4. On y cherche la clef
         $pattern = 'https://wxs.ign.fr/' ;
         $pos = strpos($jsContent, $pattern);
@@ -99,7 +132,7 @@ class HomeController
             'times' => [
                 'config' => microtime(true) - $startTime,
                 'download' => 0
-            ]
+            ],
         ];
         // Write config file
         file_put_contents($this->config['configFile'], json_encode($config, JSON_PRETTY_PRINT));
@@ -113,24 +146,20 @@ class HomeController
     
     public function download(Request $request, Response $response, $args)
     {
+        if ($request); // Avoid Codacy warning
+        if ($args); // Avoid Codacy warning
+
         // Read config file
         $images = json_decode(file_get_contents($this->config['configFile']));
         
         //echo('<pre>'); var_dump($images);
         $startTime = microtime(true);
 
-        // pour faire croire au serveur qu'on est un vrai navigateur, sinon il nous jette.
-        $context = stream_context_create([
-            "http" => [
-                "header" => "User-Agent: Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/50.0.2661.102 Safari/537.36"
-            ]
-        ]);
-        
         while (count ($images->todo)> 0 && microtime(true)-$startTime < 2) {
             // Download the image to process
             $image = $images->todo[0];
             
-            $fileContents = file_get_contents($image->url, false, $context);
+            $fileContents = file_get_contents($image->url);
             $filename = 'img-'.$image->row.'-'.$image->col.'.jpg' ;
             
             file_put_contents($this->config['tmpPath'].$filename, $fileContents);
@@ -166,6 +195,9 @@ class HomeController
     
     public function merge(Request $request, Response $response, $args)
     {
+        if ($request); // Avoid Codacy warning
+        if ($args); // Avoid Codacy warning
+
         // Read config file
         $images = json_decode(file_get_contents($this->config['configFile']));
         $bigImage = imagecreatetruecolor(256 * $images->cols, 256 * $images->rows);

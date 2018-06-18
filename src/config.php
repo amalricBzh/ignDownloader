@@ -19,6 +19,12 @@ return [
         
         // Divers
         'configFile' => __DIR__ . '/../data/config.json',
-        'tmpPath' => __DIR__.'/../data/temp/'
+        'tmpPath' => __DIR__.'/../data/temp/',
+
+        // PROXY ******************* Change values if you are behind proxy
+        'useProxy' => false,
+        'proxyUrl' => 'tcp://192.168.0.2:3128', // Always tcp://
+        '$proxyPass' => 'LOGIN:PASSWORD',
+
     ]
 ];
