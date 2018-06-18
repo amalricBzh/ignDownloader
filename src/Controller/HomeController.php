@@ -81,49 +81,14 @@ class HomeController
         $col = (int) $postVars['col'];
         $nbRow = (int) $postVars['nbrows'];
         $nbCol = (int) $postVars['nbcols'];
-        // Try to get personnal key from geoportail
-        // 1. On charge une page avec la carte
-        $html = @file_get_contents('https://www.geoportail.gouv.fr/carte');
-        if ($html === false ) {
-            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Impossible de joindre le serveur. Vous êtes peut-être derrière un proxy.']);
-        }
-        // 2. On cherche le fichier js qui contiendra la clef
-        preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
-        if (count($matches) !== 1) {
-            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).']);
-        }
 
-        // 3. On charge le fichier js
-        $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
-        $jsContent = file_get_contents($jsFilename);
-
-        // 4. On y cherche la clef
-        $pattern = 'https://wxs.ign.fr/' ;
-        $pos = strpos($jsContent, $pattern);
-        if ($pos === false) {
-            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).']);
+        $apiKeyResult = $this->getApiKey();
+        if ($apiKeyResult['error']) {
+            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => $apiKeyResult['message']]);
         }
-        $pos += strlen($pattern);
-        $end = strpos($jsContent, '/', $pos);
-        if ($end === false) {
-            return $this->renderer->render($response, 'error.phtml', ['errorMessage' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).']);
-        }
-
-        $this->apiKey = substr($jsContent, $pos, $end - $pos);
-        $this->logger->addInfo("APIKey trouvée : ". $this->apiKey);
 
         // Create images urls
-        $images = [] ;
-        for ($i = 0; $i < $nbRow ; $i++ ) {
-            for ($j = 0 ; $j < $nbCol ; $j++) {
-                $images[] = [
-                    'row' => $i,
-                    'col' => $j,
-                    'url' => 'http://wxs.ign.fr/'.$this->apiKey.'/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX=19&TILEROW='
-                    . ($row + $i) . '&TILECOL=' . ($col + $j) . '&FORMAT=image%2Fjpeg'
-                ];
-            }
-        }
+        $images = $this->createImagesUrls($row, $col, $nbRow, $nbCol);
         $config = [
             'todo' => $images,
             'done' => [],
@@ -219,6 +184,68 @@ class HomeController
 	    $this->logger->addInfo("Image créée (". $images->rows .'x'. $images->cols.')');
         // Afficher la page final
         return $this->renderer->render($response, 'merge.phtml');
+    }
+
+    ////////////////////// PROTECTED
+
+    protected function createImagesUrls($row, $col, $nbRow, $nbCol)
+    {
+        $images = [] ;
+        for ($i = 0; $i < $nbRow ; $i++ ) {
+            for ($j = 0 ; $j < $nbCol ; $j++) {
+                $images[] = [
+                    'row' => $i,
+                    'col' => $j,
+                    'url' => 'http://wxs.ign.fr/'.$this->apiKey.'/geoportail/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=ORTHOIMAGERY.ORTHOPHOTOS&STYLE=normal&TILEMATRIXSET=PM&TILEMATRIX=19&TILEROW='
+                        . ($row + $i) . '&TILECOL=' . ($col + $j) . '&FORMAT=image%2Fjpeg'
+                ];
+            }
+        }
+        return $images;
+    }
+
+    protected function getApiKey()
+    {
+        // Try to get personnal key from geoportail
+        // 1. On charge une page avec la carte
+        $html = @file_get_contents('https://www.geoportail.gouv.fr/carte');
+        if ($html === false ) {
+            return ['error' => true,
+                'message' => 'Impossible de joindre le serveur. Vous êtes peut-être derrière un proxy.'];
+        }
+
+        // 2. On cherche le fichier js qui contiendra la clef
+        preg_match('/portail-front-[a-f0-9]+\.js/', $html, $matches);
+        if (count($matches) !== 1) {
+            return ['error' => true,
+                'message' => 'Erreur lors de la récupération de la clef API Géoportail (fichier js non trouvé).'];
+        }
+
+        // 3. On charge le fichier js
+        $jsFilename = 'https://www.geoportail.gouv.fr/assets/' . $matches[0];
+        $jsContent = file_get_contents($jsFilename);
+
+        // 4. On y cherche la clef
+        $pattern = 'https://wxs.ign.fr/' ;
+        $pos = strpos($jsContent, $pattern);
+        if ($pos === false) {
+            return ['error' => true,
+                'message' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 1/2).'];
+        }
+        $pos += strlen($pattern);
+        $end = strpos($jsContent, '/', $pos);
+        if ($end === false) {
+            return ['error' => true,
+                'message' => 'Erreur lors de la récupération de la clef API Géoportail (clef dans le js non trouvée 2/2).'];
+        }
+
+        $this->apiKey = substr($jsContent, $pos, $end - $pos);
+        $this->logger->addInfo("APIKey trouvée : ". $this->apiKey);
+
+        return [
+            'error' => false,
+            'apiKey' => $this->apiKey
+        ];
     }
 
 }
