@@ -15,7 +15,9 @@ proxy (laissez le protocole tcp) et vos login/mot de passe.
 
 # Quelles évolutions sont prévues ?
 
-Au lieu de rentrer les coordonnées par numéros de ligne et de colonne, entrer les coordonnées géographiques (longitude et lattitude).
+- Au lieu de rentrer les coordonnées par numéros de ligne et de colonne, entrer les coordonnées géographiques (longitude et lattitude).
+- Améliorer l'estimation du temps total qui n'est pas mise à jour correctement en live.
+- J'attends vos idées...
 
 # Historique
 
