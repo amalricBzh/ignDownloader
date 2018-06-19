@@ -17,11 +17,12 @@ proxy (laissez le protocole tcp) et vos login/mot de passe.
 
 - Au lieu de rentrer les coordonnées par numéros de ligne et de colonne, entrer les coordonnées géographiques (longitude et lattitude).
 - Améliorer l'estimation du temps total qui n'est pas mise à jour correctement en live.
+- Télécharger plutôt la carte (ça a peu d'intérêt pour moi mais peut en avoir pour vous)
 - J'attends vos idées...
 
 # Historique
 
-## v0.2
+## [v0.2](https://github.com/amalricBzh/ignDownloader/releases/tag/v0.2)
 Gestion possible d'un proxy.
 ## v0.1
 Première version fonctionnelle basée sur le framework Slim.
